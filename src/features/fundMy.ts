@@ -32,21 +32,22 @@ const getMyFundDetails = async () => {
         let lastTime = fundValuationDetail.Expansion.GZTIME;
         let nowJJJZ = Number(fundValuationDetail.Expansion.GZ || '0');
         let isValuation = true;
-        const searchFundResult = await get<ISearchFundResult>(`http://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?m=1&key=${oldData.id}`);
-        if (searchFundResult.ErrCode !== 0) {
+        const searchFundResultStr = await get(`https://fundgz.1234567.com.cn/js/${oldData.id}.js?rt=${Date.now()}`);
+        const searchFundResultMatch = searchFundResultStr.match(/jsonpgz\((.*)\);/);
+        if (!searchFundResultMatch) {
           utools.showMessageBox({
-            message: searchFundResult.ErrMsg,
+            message: '获取基金搜索结果失败',
           });
           return;
-        } else {
-          const searchFundDetail = searchFundResult.Datas[0];
-          // 最后单位净值
-          if (lastTime.includes(searchFundDetail.FundBaseInfo.FSRQ)) {
-            // console.log(`净值:`, searchFundDetail.FundBaseInfo);
-            lastTime = searchFundDetail.FundBaseInfo.FSRQ;
-            nowJJJZ = Number(searchFundDetail.FundBaseInfo.DWJZ || '0');
-            isValuation = false;
-          }
+        }
+        const searchFundResult = JSON.parse(searchFundResultMatch[1]);
+        const searchFundDetail = searchFundResult;
+        // 最后单位净值
+        if (lastTime.includes(searchFundDetail.jzrq)) {
+          // console.log(`净值:`, searchFundDetail);
+          lastTime = searchFundDetail.jzrq;
+          nowJJJZ = Number(searchFundDetail.dwjz || '0');
+          isValuation = false;
         }
         db.data = {
           ...oldData,
