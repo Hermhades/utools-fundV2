@@ -20,18 +20,7 @@ const getMyFundDetails = async () => {
     dbList.map(async db => {
       try {
         const oldData = db.data;
-        const fundValuationDetail = await get<IFundValuationDetailResult>(
-          `https://fundmobapi.eastmoney.com/FundMApi/FundVarietieValuationDetail.ashx?FCODE=${oldData.id}&deviceid=D03E8A22-9E0A-473F-B045-3745FC7931C4&plat=Iphone&product=EFund&version=6.2.9&GTOKEN=793EAE9248BC4181A9380C49938D1E31`
-        );
-        if (fundValuationDetail.ErrCode !== 0) {
-          utools.showMessageBox({
-            message: fundValuationDetail.ErrMsg,
-          });
-          return;
-        }
-        let lastTime = fundValuationDetail.Expansion.GZTIME;
-        let nowJJJZ = Number(fundValuationDetail.Expansion.GZ || '0');
-        let isValuation = true;
+
         const searchFundResultStr = await get(`https://fundgz.1234567.com.cn/js/${oldData.id}.js?rt=${Date.now()}`);
         const searchFundResultMatch = searchFundResultStr.match(/jsonpgz\((.*)\);/);
         if (!searchFundResultMatch) {
@@ -41,20 +30,15 @@ const getMyFundDetails = async () => {
           return;
         }
         const searchFundResult = JSON.parse(searchFundResultMatch[1]);
-        const searchFundDetail = searchFundResult;
-        // 最后单位净值
-        if (lastTime.includes(searchFundDetail.jzrq)) {
-          // console.log(`净值:`, searchFundDetail);
-          lastTime = searchFundDetail.jzrq;
-          nowJJJZ = Number(searchFundDetail.dwjz || '0');
-          isValuation = false;
-        }
+        let updateTime = searchFundResult.gztime
+        // 简便算法，如果10分钟内没更新，认为已经闭市
+        let doneToday = new Date().getTime() - new Date(updateTime).getTime() > 10 * 60 * 1000;
         db.data = {
           ...oldData,
-          yesJJJZ: Number(fundValuationDetail.Expansion.DWJZ || '0'),
-          nowJJJZ: Number(nowJJJZ || '0'),
-          lastTime,
-          isValuation,
+          yesJJJZ: Number(searchFundResult.dwjz || '0'), // 单位净值
+          nowJJJZ: Number(searchFundResult.gsz || '0'), // 估算值
+          lastTime: updateTime,
+          isValuation: !doneToday // nowJJJZ 是否为估值
         };
         FundDBHelper.update(db);
         // console.log(JSON.stringify(db.data));
