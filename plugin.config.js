@@ -39,13 +39,13 @@ const pluginConfig = {
       code: 'utools_fund_my',
       explain: '我的自选基金',
       icon: 'assets/img/logo.png',
-      cmds: ['我的自选基金', '基金', 'fund'],
+      cmds: ['我的自选基金', '基金', 'funds', 'fs'],
     },
     {
       code: 'utools_fund_market',
       explain: '大盘行情',
       icon: 'assets/img/market.png',
-      cmds: ['大盘行情', '基金', 'fund'],
+      cmds: ['大盘行情', '基金', 'fund', 'market'],
     },
     {
       code: 'utools_fund_config_export',
